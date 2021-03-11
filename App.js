@@ -12,8 +12,46 @@ import { useFonts } from "expo-font";
 import Login from "./screens/Login";
 import Home from "./screens/Home";
 
-console.disableYellowBox = true;
+import * as TaskManager from "expo-task-manager";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
+console.disableYellowBox = true;
+const LOCATION_TRACKING = "locationtracking";
+
+TaskManager.defineTask(
+  LOCATION_TRACKING,
+  async ({ data: { locations }, error }) => {
+    if (error) {
+      console.log("LOCATION_TRACKING task ERROR:", error);
+      return;
+    }
+    if (locations) {
+      let lat = locations[0].coords.latitude;
+      let long = locations[0].coords.longitude;
+      let speed = locations[0].coords.speed;
+      try {
+        let storedCoordinates = await getSavedLocations();
+        storedCoordinates.push([lat, long, speed]);
+
+        await AsyncStorage.setItem(
+          "storedCoordinates",
+          JSON.stringify(storedCoordinates)
+        );
+      } catch (err) {
+        console.log(err);
+      }
+    }
+  }
+);
+
+async function getSavedLocations() {
+  try {
+    const item = await AsyncStorage.getItem("storedCoordinates");
+    return item ? JSON.parse(item) : [];
+  } catch (e) {
+    return [];
+  }
+}
 export default function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);

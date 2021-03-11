@@ -12,39 +12,11 @@ import NetInfo from "@react-native-community/netinfo";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import * as Location from "expo-location";
-import * as TaskManager from "expo-task-manager";
 import * as Permissions from "expo-permissions";
 import globalStyles from "../styles/global";
 import styles from "../styles/tracker";
-const LOCATION_TRACKING = "location-tracking";
 
-TaskManager.defineTask(LOCATION_TRACKING, async ({ data, error }) => {
-  if (error) {
-    console.log("LOCATION_TRACKING task ERROR:", error);
-    return;
-  }
-  if (data) {
-    const { locations } = data;
-    let lat = locations[0].coords.latitude;
-    let long = locations[0].coords.longitude;
-    try {
-      let storedCoordinates = getSavedLocations();
-      storedCoordinates = JSON.parse(storedCoordinates);
-      storedCoordinates.push([lat, long, speed]);
-    } catch (err) {
-      console.log(err);
-    }
-  }
-});
-
-async function getSavedLocations() {
-  try {
-    const item = await AsyncStorage.getItem("storedCoordinates");
-    return item ? JSON.parse(item) : [];
-  } catch (e) {
-    return [];
-  }
-}
+const LOCATION_TRACKING = "locationtracking";
 
 export default function Tracker({ navigation, user, setNavigationVisible }) {
   const [timerId, setTimerId] = useState(null);
@@ -65,7 +37,7 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
   useEffect(() => {
     let id = setInterval(() => {
       getCoordinates();
-    }, 4000);
+    }, 2000);
 
     return () => {
       clearInterval(id);
@@ -73,8 +45,15 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
   }, []);
 
   async function getCoordinates() {
-    console.log(await getSavedLocations());
     setCoordinates(await getSavedLocations());
+  }
+  async function getSavedLocations() {
+    try {
+      const item = await AsyncStorage.getItem("storedCoordinates");
+      return item ? JSON.parse(item) : [];
+    } catch (e) {
+      return [];
+    }
   }
 
   useEffect(() => {
@@ -138,9 +117,12 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
   async function startLocationTracking() {
     await Location.startLocationUpdatesAsync(LOCATION_TRACKING, {
       accuracy: Location.Accuracy.Highest,
-      timeInterval: 5000,
-      distanceInterval: 0,
+      timeInterval: 100,
     });
+    const hasStarted = await Location.hasStartedLocationUpdatesAsync(
+      LOCATION_TRACKING
+    );
+    console.log("tracking started?", hasStarted);
   }
   async function stopLocationTracking() {
     await Location.stopLocationUpdatesAsync(LOCATION_TRACKING);

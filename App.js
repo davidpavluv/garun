@@ -1,21 +1,102 @@
-import { StatusBar } from 'expo-status-bar';
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useState, useEffect } from "react";
+import "expo-firestore-offline-persistence";
+import * as Google from "expo-google-app-auth";
+import * as SecureStore from "expo-secure-store";
+
+import { View } from "react-native";
+import styles from "./styles/global";
+
+import AppLoading from "expo-app-loading";
+import { useFonts } from "expo-font";
+
+import Login from "./screens/Login";
+import Home from "./screens/Home";
+
+console.disableYellowBox = true;
 
 export default function App() {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    getUser();
+  }, []);
+
+  let [fontsLoaded] = useFonts({
+    "rubik-light": require("./assets/fonts/Rubik-Light.ttf"),
+    "rubik-regular": require("./assets/fonts/Rubik-Regular.ttf"),
+    "rubik-medium": require("./assets/fonts/Rubik-Medium.ttf"),
+  });
+
+  //login loading functions
+  async function loadingStart() {
+    setLoading(true);
+  }
+  async function loadingEnd() {
+    setLoading(false);
+  }
+
+  //user saving functions
+  async function saveUser(data) {
+    if (data === null) {
+      setUser(null);
+      await SecureStore.deleteItemAsync("user");
+    } else {
+      await SecureStore.setItemAsync("user", JSON.stringify(data));
+      setUser(data);
+    }
+  }
+  async function getUser() {
+    let storedUser = JSON.parse(await SecureStore.getItemAsync("user"));
+
+    if (storedUser && storedUser.email) {
+      setUser(storedUser);
+    } else {
+      setUser(null);
+    }
+  }
+  function logOut() {
+    saveUser(null);
+    loadingEnd();
+  }
+
+  async function googleLogin() {
+    loadingStart();
+    const data = await Google.logInAsync({
+      iosClientId:
+        "81549393528-qg05hcoaf0lcu6lts1dbjudcqrkralul.apps.googleusercontent.com",
+      iosStandaloneAppClientId:
+        "81549393528-r5o3tdt24cms9gcpkujmqjbdj4h8lusp.apps.googleusercontent.com",
+      androidClientId:
+        "81549393528-f5a7f2n0j0ci6ohhoa89tf8chjp6n3el.apps.googleusercontent.com",
+      androidStandaloneAppClientId:
+        "81549393528-h124ofbq8ffbmlid3k2i71oj5vck4v2f.apps.googleusercontent.com",
+      scopes: ["profile", "email"],
+    });
+
+    if (data.type === "success") {
+      // Then you can use the Google REST API
+      // let userInfoResponse = await fetch(
+      //   "https://www.googleapis.com/userinfo/v2/me",
+      //   {
+      //     headers: { Authorization: `Bearer ${data.accessToken}` },
+      //   }
+      // );
+      saveUser(data.user);
+    } else {
+      saveUser(null);
+    }
+    loadingEnd();
+  }
+
+  if (!fontsLoaded) return <AppLoading />;
   return (
     <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
+      {user ? (
+        <Home logOut={logOut} user={user} />
+      ) : (
+        <Login googleLogin={googleLogin} loading={loading} />
+      )}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});

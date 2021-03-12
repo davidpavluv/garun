@@ -143,12 +143,6 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
     await AsyncStorage.removeItem("storedCoordinates");
   }
 
-  function getInternet() {
-    NetInfo.fetch().then((state) => {
-      return state.isConnected;
-    });
-  }
-
   function distanceFrom(points) {
     var radianLat1 = points[0][0] * (Math.PI / 180);
     var radianLng1 = points[0][1] * (Math.PI / 180);
@@ -195,48 +189,47 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
     return minutes + ":" + seconds;
   }
 
-  async function save() {
-    //online
-    if (await getInternet()) {
-      try {
-        setUploading(true);
-        //write recored
-        let ref = db.collection("records").doc(user.email);
-        let doc = await ref.get();
+  function save() {
+    NetInfo.fetch().then(async (state) => {
+      if (state.isConnected) {
+        try {
+          setUploading(true);
+          //write recored
+          let ref = db.collection("records").doc(user.email);
+          let doc = await ref.get();
 
-        let timeNow = Date.now();
+          let timeNow = Date.now();
 
-        if (doc && doc.exists) {
-          await ref.update({ [timeNow]: [time, distance, timeNow] });
-        } else {
-          await ref.set({ [timeNow]: [time, distance, timeNow] });
+          if (doc && doc.exists) {
+            await ref.update({ [timeNow]: [time, distance, timeNow] });
+          } else {
+            await ref.set({ [timeNow]: [time, distance, timeNow] });
+          }
+
+          //increment school
+          let totalRef = db.collection("totals").doc("gyarab");
+          let increment = FieldValue.increment(distance);
+          await totalRef.update({ total: increment });
+
+          //increment profile
+          let userTotalRef = db.collection("users-totals").doc(user.email);
+          let totalDoc = await userTotalRef.get();
+
+          if (totalDoc && totalDoc.exists) {
+            await userTotalRef.update({ total: increment });
+          } else {
+            await userTotalRef.set({ total: increment });
+          }
+          setUploading(false);
+          setModal(["uloženo", true]);
+          reset();
+        } catch (er) {
+          console.log(er);
         }
-
-        //increment school
-        let totalRef = db.collection("totals").doc("gyarab");
-        let increment = FieldValue.increment(distance);
-        await totalRef.update({ total: increment });
-
-        //increment profile
-        let userTotalRef = db.collection("users-totals").doc(user.email);
-        let totalDoc = await userTotalRef.get();
-
-        if (totalDoc && totalDoc.exists) {
-          await userTotalRef.update({ total: increment });
-        } else {
-          await userTotalRef.set({ total: increment });
-        }
-        setUploading(false);
-        setModal(["uloženo", true]);
-        reset();
-      } catch (er) {
-        console.log(er);
+      } else {
+        setModal(["nejdříve se připojte k internetu", true]);
       }
-    }
-    //offline
-    else {
-      setModal(["nejdříve se připojte k internetu", true]);
-    }
+    });
   }
 
   return (

@@ -80,6 +80,11 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
   }, []);
 
   useEffect(() => {
+    let isOver = coordinates.some((coords) => coords[2] > 7);
+    setOverLimit(isOver);
+  }, [coordinates]);
+
+  useEffect(() => {
     let sum = 0;
     if (coordinates.length > 1) {
       for (let i = 1; i < coordinates.length; i++) {

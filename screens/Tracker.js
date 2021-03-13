@@ -95,7 +95,7 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
   useEffect(() => {
     if (running === -1) {
       clearInterval(timerId); //stop timer
-      stopLocationTracking; //stop tracker
+      stopLocationTracking(); //stop tracker
     } else if (running === 1) {
       //start timer
       let id = setInterval(() => {
@@ -117,7 +117,6 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
   async function startLocationTracking() {
     await Location.startLocationUpdatesAsync(LOCATION_TRACKING, {
       accuracy: Location.Accuracy.Highest,
-      timeInterval: 100,
     });
     const hasStarted = await Location.hasStartedLocationUpdatesAsync(
       LOCATION_TRACKING

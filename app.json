@@ -19,6 +19,9 @@
       "bundleIdentifier": "com.garun",
       "infoPlist": {
         "NSLocationAlwaysUsageDescription": "Aplikace používá polohu ke sledování běhu",
+        "NSLocationWhenInUseUsageDescription": "Aplikace používá polohu ke sledování běhu",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Aplikace používá polohu ke sledování běhu",
+
         "UIBackgroundModes": ["location", "fetch"]
       }
     },
@@ -31,6 +34,7 @@
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
         "ACCESS_NETWORK_STATE",
         "ACCESS_WIFI_STATE"
       ]

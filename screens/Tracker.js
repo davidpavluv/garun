@@ -37,7 +37,7 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
   useEffect(() => {
     let id = setInterval(() => {
       getCoordinates();
-    }, 2000);
+    }, 1000);
 
     return () => {
       clearInterval(id);
@@ -86,9 +86,11 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
 
   useEffect(() => {
     let sum = 0;
-    if (coordinates.length > 1) {
-      for (let i = 1; i < coordinates.length; i++) {
-        sum += distanceFrom([coordinates[i - 1], coordinates[i]]);
+    let shifted = coordinates.slice(3);
+
+    if (shifted.length > 1) {
+      for (let i = 1; i < shifted.length; i++) {
+        sum += distanceFrom([shifted[i - 1], shifted[i]]);
       }
     }
     sum = sum * 100;
@@ -122,6 +124,12 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
   async function startLocationTracking() {
     await Location.startLocationUpdatesAsync(LOCATION_TRACKING, {
       accuracy: Location.Accuracy.Highest,
+      distanceInterval: 1,
+      deferredUpdatesInterval: 1000,
+      foregroundService: {
+        notificationTitle: "Použivá se tvoje poloha",
+        notificationBody: "Můžete vypnout stopnutím trackování",
+      },
     });
     const hasStarted = await Location.hasStartedLocationUpdatesAsync(
       LOCATION_TRACKING
@@ -249,6 +257,9 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
       </View>
 
       <View style={{ ...globalStyles.card, ...styles.card }}>
+        <Text>cheating: {overLimit}</Text>
+        <Text>speed: {coordinates.slice(-1)[2]}</Text>
+
         <Text style={globalStyles.title}>dráha</Text>
         <Text style={globalStyles.value}>{distance.toLocaleString()} km</Text>
         <Text style={{ ...globalStyles.title, marginTop: 20 }}>čas</Text>

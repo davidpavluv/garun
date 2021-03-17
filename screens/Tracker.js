@@ -118,18 +118,24 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
   useEffect(() => {
     if (overLimit) {
       toggle();
+      stopLocationTracking();
+      clearInterval(timerId);
     }
   }, [overLimit]);
 
   async function startLocationTracking() {
     await Location.startLocationUpdatesAsync(LOCATION_TRACKING, {
-      accuracy: Location.Accuracy.Highest,
-      distanceInterval: 1,
-      deferredUpdatesInterval: 1000,
+      accuracy: Location.Accuracy.BestForNavigation,
+      timeInterval: 60 * 1000,
+      // android behavior
       foregroundService: {
-        notificationTitle: "Použivá se tvoje poloha",
-        notificationBody: "Můžete vypnout stopnutím trackování",
+        notificationTitle: "GA RUN je aktivní",
+        notificationBody: "Zaznamenává se tvoje poloha pro výpočet vzdálenosti",
+        notificationColor: "#4D6BFF",
       },
+      // ios behavior
+      activityType: Location.ActivityType.Fitness,
+      showsBackgroundLocationIndicator: true,
     });
     const hasStarted = await Location.hasStartedLocationUpdatesAsync(
       LOCATION_TRACKING
@@ -141,6 +147,10 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
   }
 
   async function reset() {
+    stopLocationTracking();
+    clearInterval(timerId);
+    await AsyncStorage.removeItem("storedCoordinates");
+
     setRunning(-1);
     setDistance(0);
 
@@ -151,8 +161,6 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
     setSaving(false);
     setCoordinates([]);
     setOverLimit(false);
-
-    await AsyncStorage.removeItem("storedCoordinates");
   }
 
   function distanceFrom(points) {
@@ -257,9 +265,6 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
       </View>
 
       <View style={{ ...globalStyles.card, ...styles.card }}>
-        <Text>cheating: {overLimit}</Text>
-        <Text>speed: {coordinates.slice(-1)[2]}</Text>
-
         <Text style={globalStyles.title}>dráha</Text>
         <Text style={globalStyles.value}>{distance.toLocaleString()} km</Text>
         <Text style={{ ...globalStyles.title, marginTop: 20 }}>čas</Text>
@@ -268,12 +273,12 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
 
       <View style={styles.button_container}>
         {overLimit ? (
-          <View onPress={reset} style={styles.error_button}>
+          <TouchableOpacity onPress={reset} style={styles.error_button}>
             <Text style={styles.action_text}>zavřít</Text>
             <Text style={styles.description_text}>
               překonal jsi limit 30km/h
             </Text>
-          </View>
+          </TouchableOpacity>
         ) : saving ? (
           uploading ? (
             <ActivityIndicator size="small" color="#0000ff" />

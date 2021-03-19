@@ -67,19 +67,6 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
   }, [running, saving]);
 
   useEffect(() => {
-    const config = async () => {
-      let res = await Permissions.askAsync(Permissions.LOCATION);
-      if (res.status !== "granted") {
-        console.log("Permission to access location was denied");
-      } else {
-        console.log("Permission to access location granted");
-      }
-    };
-
-    config();
-  }, []);
-
-  useEffect(() => {
     let isOver = coordinates.some((coords) => coords[2] > 7);
     setOverLimit(isOver);
   }, [coordinates]);
@@ -104,16 +91,34 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
       clearInterval(timerId); //stop timer
       stopLocationTracking(); //stop tracker
     } else if (running === 1) {
-      //start timer
-      let id = setInterval(() => {
-        setTime(Date.now() - startTime);
-      }, 1000);
-      setTimerId(id);
-
-      //start tracker
-      startLocationTracking();
+      toggleToStart();
     }
   }, [running]);
+
+  async function toggleToStart() {
+    let { status } = await Permissions.getAsync(Permissions.LOCATION);
+    if (status !== "granted") {
+      let res = await Permissions.askAsync(Permissions.LOCATION);
+      if (res.status !== "granted") {
+        setRunning(-1);
+      } else {
+        startRunning();
+      }
+    } else {
+      startRunning();
+    }
+  }
+
+  function startRunning() {
+    //start timer
+    let id = setInterval(() => {
+      setTime(Date.now() - startTime);
+    }, 1000);
+    setTimerId(id);
+
+    //start tracker
+    startLocationTracking();
+  }
 
   useEffect(() => {
     if (overLimit) {

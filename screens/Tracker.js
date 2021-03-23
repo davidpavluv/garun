@@ -95,9 +95,72 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
     }
   }, [running]);
 
+  //------------------------------------------------
+  useEffect(() => {
+    handleSavedActions();
+  }, []);
+
+  async function handleSavedActions() {
+    try {
+      let hasStarted = await Location.hasStartedLocationUpdatesAsync(
+        LOCATION_TRACKING
+      );
+      let isSavingSaved = await AsyncStorage.getItem("saving");
+
+      if (hasStarted) {
+        //check starting
+        handleSavedRunning();
+      } else if (isSavingSaved == "true") {
+        //check saving
+        handleSavedSaving();
+      }
+    } catch (e) {
+      console.log(e);
+    }
+  }
+  async function handleSavedRunning() {
+    try {
+      let savedStartTime = await AsyncStorage.getItem("startTime");
+      setStartTime(Number(savedStartTime));
+      setRunning(1);
+    } catch (e) {
+      console.log(e);
+    }
+  }
+  async function handleSavedSaving() {
+    try {
+      let savedStartTime = await AsyncStorage.getItem("startTime");
+      setStartTime(Number(savedStartTime));
+      setSaving(true);
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
+  useEffect(() => {
+    saveToStorage("startTime", startTime.toString());
+  }, [startTime]);
+
+  useEffect(() => {
+    if (saving) {
+      saveToStorage("saving", "true");
+    } else {
+      saveToStorage("saving", "false");
+    }
+  }, [saving]);
+
+  async function saveToStorage(key, value) {
+    try {
+      await AsyncStorage.setItem(key, value);
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
   async function toggleToStart() {
     let { status } = await Permissions.getAsync(Permissions.LOCATION);
-    if (status !== "granted") {
+    let resultGPS = await Location.enableNetworkProviderAsync();
+    if (status !== "granted" && resultGPS) {
       let res = await Permissions.askAsync(Permissions.LOCATION);
       if (res.status !== "granted") {
         setRunning(-1);
@@ -150,11 +213,14 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
   async function stopLocationTracking() {
     await Location.stopLocationUpdatesAsync(LOCATION_TRACKING);
   }
-
   async function reset() {
     stopLocationTracking();
     clearInterval(timerId);
-    await AsyncStorage.removeItem("storedCoordinates");
+    try {
+      await AsyncStorage.clear();
+    } catch (e) {
+      console.log(e);
+    }
 
     setRunning(-1);
     setDistance(0);
@@ -167,7 +233,6 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
     setCoordinates([]);
     setOverLimit(false);
   }
-
   function distanceFrom(points) {
     var radianLat1 = points[0][0] * (Math.PI / 180);
     var radianLng1 = points[0][1] * (Math.PI / 180);

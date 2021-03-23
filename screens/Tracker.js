@@ -140,8 +140,10 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
   }
 
   useEffect(() => {
-    saveToStorage("startTime", startTime.toString());
-    saveToStorage("timerId", timerId.toString());
+    if (startTime && timerId) {
+      saveToStorage("startTime", startTime.toString());
+      saveToStorage("timerId", timerId.toString());
+    }
   }, [startTime]);
 
   useEffect(() => {

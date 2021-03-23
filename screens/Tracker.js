@@ -29,7 +29,7 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
   const [overLimit, setOverLimit] = useState(false);
   const [coordinates, setCoordinates] = useState([]);
 
-  const [saving, setSaving] = useState(false);
+  const [saving, setSaving] = useState(null);
   const [uploading, setUploading] = useState(false);
 
   const [modal, setModal] = useState(["", false]); //[[message],[visibility]]
@@ -88,6 +88,9 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
 
   useEffect(() => {
     if (running === -1) {
+      saveToStorage("saving", saving.toString());
+      saveToStorage("distance", distance.toString());
+
       clearInterval(timerId); //stop timer
       stopLocationTracking(); //stop tracker
     } else if (running === 1) {
@@ -106,7 +109,6 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
         LOCATION_TRACKING
       );
       let isSavingSaved = await AsyncStorage.getItem("saving");
-
       if (hasStarted) {
         //check starting
         handleSavedRunning();
@@ -131,8 +133,10 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
   }
   async function handleSavedSaving() {
     try {
-      let savedStartTime = await AsyncStorage.getItem("startTime");
-      setStartTime(Number(savedStartTime));
+      let savedTime = await AsyncStorage.getItem("time");
+      let savedDistance = await AsyncStorage.getItem("distance");
+      setTime(Number(savedTime));
+      setDistance(Number(savedDistance));
       setSaving(true);
     } catch (e) {
       console.log(e);
@@ -144,13 +148,11 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
       saveToStorage("startTime", startTime.toString());
       saveToStorage("timerId", timerId.toString());
     }
-  }, [startTime]);
+  }, [startTime, timerId]);
 
   useEffect(() => {
-    if (saving) {
-      saveToStorage("saving", "true");
-    } else {
-      saveToStorage("saving", "false");
+    if (saving !== null) {
+      saveToStorage("time", time.toString());
     }
   }, [saving]);
 
@@ -218,14 +220,10 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
   async function stopLocationTracking() {
     await Location.stopLocationUpdatesAsync(LOCATION_TRACKING);
   }
+
   async function reset() {
     stopLocationTracking();
     clearInterval(timerId);
-    try {
-      await AsyncStorage.clear();
-    } catch (e) {
-      console.log(e);
-    }
 
     setRunning(-1);
     setDistance(0);
@@ -237,6 +235,12 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
     setSaving(false);
     setCoordinates([]);
     setOverLimit(false);
+
+    try {
+      await AsyncStorage.clear();
+    } catch (e) {
+      console.log(e);
+    }
   }
   function distanceFrom(points) {
     var radianLat1 = points[0][0] * (Math.PI / 180);

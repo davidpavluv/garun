@@ -121,7 +121,9 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
   async function handleSavedRunning() {
     try {
       let savedStartTime = await AsyncStorage.getItem("startTime");
+      let savedTimerId = await AsyncStorage.getItem("timerId");
       setStartTime(Number(savedStartTime));
+      setTimerId(Number(savedTimerId));
       setRunning(1);
     } catch (e) {
       console.log(e);
@@ -139,6 +141,7 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
 
   useEffect(() => {
     saveToStorage("startTime", startTime.toString());
+    saveToStorage("timerId", timerId.toString());
   }, [startTime]);
 
   useEffect(() => {

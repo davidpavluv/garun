@@ -34,16 +34,6 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
 
   const [modal, setModal] = useState(["", false]); //[[message],[visibility]]
 
-  useEffect(() => {
-    let id = setInterval(() => {
-      getCoordinates();
-    }, 1000);
-
-    return () => {
-      clearInterval(id);
-    };
-  }, []);
-
   async function getCoordinates() {
     setCoordinates(await getSavedLocations());
   }
@@ -57,13 +47,23 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
   }
 
   useEffect(() => {
+    let id;
     if ((running === 1) | saving) {
       //hide
       setNavigationVisible(false);
+      //udate
+      id = setInterval(() => {
+        getCoordinates();
+      }, 1000);
     } else {
       //show
       setNavigationVisible(true);
+      //stop update
+      clearInterval(id);
     }
+    return () => {
+      clearInterval(id);
+    };
   }, [running, saving]);
 
   useEffect(() => {
@@ -88,81 +88,12 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
 
   useEffect(() => {
     if (running === -1) {
-      saveToStorage("saving", saving.toString());
-      saveToStorage("distance", distance.toString());
-
       clearInterval(timerId); //stop timer
       stopLocationTracking(); //stop tracker
     } else if (running === 1) {
       toggleToStart();
     }
   }, [running]);
-
-  //------------------------------------------------
-  useEffect(() => {
-    handleSavedActions();
-  }, []);
-
-  async function handleSavedActions() {
-    try {
-      let hasStarted = await Location.hasStartedLocationUpdatesAsync(
-        LOCATION_TRACKING
-      );
-      let isSavingSaved = await AsyncStorage.getItem("saving");
-      if (hasStarted) {
-        //check starting
-        handleSavedRunning();
-      } else if (isSavingSaved == "true") {
-        //check saving
-        handleSavedSaving();
-      }
-    } catch (e) {
-      console.log(e);
-    }
-  }
-  async function handleSavedRunning() {
-    try {
-      let savedStartTime = await AsyncStorage.getItem("startTime");
-      let savedTimerId = await AsyncStorage.getItem("timerId");
-      setStartTime(Number(savedStartTime));
-      setTimerId(Number(savedTimerId));
-      setRunning(1);
-    } catch (e) {
-      console.log(e);
-    }
-  }
-  async function handleSavedSaving() {
-    try {
-      let savedTime = await AsyncStorage.getItem("time");
-      let savedDistance = await AsyncStorage.getItem("distance");
-      setTime(Number(savedTime));
-      setDistance(Number(savedDistance));
-      setSaving(true);
-    } catch (e) {
-      console.log(e);
-    }
-  }
-
-  useEffect(() => {
-    if (startTime && timerId) {
-      saveToStorage("startTime", startTime.toString());
-      saveToStorage("timerId", timerId.toString());
-    }
-  }, [startTime, timerId]);
-
-  useEffect(() => {
-    if (saving !== null) {
-      saveToStorage("time", time.toString());
-    }
-  }, [saving]);
-
-  async function saveToStorage(key, value) {
-    try {
-      await AsyncStorage.setItem(key, value);
-    } catch (e) {
-      console.log(e);
-    }
-  }
 
   async function toggleToStart() {
     let { status } = await Permissions.getAsync(Permissions.LOCATION);

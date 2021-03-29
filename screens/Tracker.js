@@ -96,17 +96,17 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
   }, [running]);
 
   async function toggleToStart() {
-    let { status } = await Permissions.getAsync(Permissions.LOCATION);
-    let resultGPS = await Location.enableNetworkProviderAsync();
-    if (status !== "granted" && resultGPS) {
-      let res = await Permissions.askAsync(Permissions.LOCATION);
-      if (res.status !== "granted") {
-        setRunning(-1);
-      } else {
-        startRunning();
-      }
+    let { status } = await Permissions.askAsync(Permissions.LOCATION);
+    if (status == "granted") {
+      Location.enableNetworkProviderAsync()
+        .then(() => {
+          startRunning();
+        })
+        .catch(() => {
+          reset();
+        });
     } else {
-      startRunning();
+      reset();
     }
   }
 

@@ -5,6 +5,7 @@ import {
   View,
   ActivityIndicator,
   Modal,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { db, FieldValue } from "../services/firebase";
@@ -96,6 +97,26 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
   }, [running]);
 
   async function toggleToStart() {
+    let stored = await Permissions.getAsync(Permissions.LOCATION);
+
+    if (stored.status !== "granted") {
+      Alert.alert(
+        "Proč vyžaduje GA RUN přístup k poloze?",
+        "Tato aplikace shromažďuje údaje o poloze, aby umožnila zaznamenávání běhu, i když je aplikace zavřená nebo se nepoužívá.",
+        [
+          {
+            text: "Nepovolit",
+            onPress: reset,
+            style: "cancel",
+          },
+          { text: "OK", onPress: toggleToStartAfterPrompt },
+        ]
+      );
+    } else {
+      toggleToStartAfterPrompt();
+    }
+  }
+  async function toggleToStartAfterPrompt() {
     let { status } = await Permissions.askAsync(Permissions.LOCATION);
     if (status == "granted") {
       Location.enableNetworkProviderAsync()

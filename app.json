@@ -13,7 +13,9 @@
     "updates": {
       "fallbackToCacheTimeout": 0
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.garun",
@@ -22,8 +24,10 @@
         "NSLocationAlwaysUsageDescription": "Aplikace používá polohu ke sledování běhu",
         "NSLocationWhenInUseUsageDescription": "Aplikace používá polohu ke sledování běhu",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Aplikace používá polohu ke sledování běhu",
-
-        "UIBackgroundModes": ["location", "fetch"]
+        "UIBackgroundModes": [
+          "location",
+          "fetch"
+        ]
       }
     },
     "android": {
@@ -43,6 +47,7 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "description": ""
   }
 }

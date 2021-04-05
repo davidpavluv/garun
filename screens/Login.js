@@ -1,13 +1,13 @@
-import React, { useEffect, useContext, useState } from "react";
+import React from "react";
 import { Ionicons } from "@expo/vector-icons";
 
 import {
   Text,
   View,
-  Button,
   Image,
   TouchableOpacity,
   ActivityIndicator,
+  Linking,
 } from "react-native";
 import styles from "../styles/login";
 import logoName from "../assets/logoName.png";
@@ -23,10 +23,34 @@ export default function Login({ googleLogin, loading }) {
           style={styles.loading}
         />
       ) : (
-        <TouchableOpacity onPress={googleLogin} style={styles.button}>
-          <Ionicons name="logo-google" size={24} color="white" />
-          <Text style={styles.button_text}>Přihlásit se Google účtem</Text>
-        </TouchableOpacity>
+        <View>
+          <TouchableOpacity onPress={googleLogin} style={styles.button}>
+            <Ionicons name="logo-google" size={24} color="white" />
+            <Text style={styles.button_text}>Přihlásit se Google účtem</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={{
+              ...styles.policy_button,
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+            onPress={() => {
+              Linking.openURL("https://sites.google.com/view/garunpolicy/page");
+            }}
+          >
+            <Text
+              style={{
+                ...styles.button_text,
+                color: "#4D6BFF",
+                fontSize: 12,
+                marginTop: 15,
+              }}
+            >
+              Zásady ochrany osobních údajů
+            </Text>
+          </TouchableOpacity>
+        </View>
       )}
     </View>
   );

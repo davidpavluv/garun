@@ -2,7 +2,7 @@
   "expo": {
     "name": "GA RUN",
     "slug": "GA-RUN",
-    "version": "3",
+    "version": "4",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "splash": {
@@ -13,26 +13,21 @@
     "updates": {
       "fallbackToCacheTimeout": 0
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.garun",
-      "buildNumber": "3",
+      "buildNumber": "4",
       "infoPlist": {
         "NSLocationAlwaysUsageDescription": "Aplikace používá polohu ke sledování běhu",
         "NSLocationWhenInUseUsageDescription": "Aplikace používá polohu ke sledování běhu",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Aplikace používá polohu ke sledování běhu",
-        "UIBackgroundModes": [
-          "location",
-          "fetch"
-        ]
+        "UIBackgroundModes": ["location", "fetch"]
       }
     },
     "android": {
       "package": "com.garun",
-      "versionCode": 3,
+      "versionCode": 4,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#4D6BFF"

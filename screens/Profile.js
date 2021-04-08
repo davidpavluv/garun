@@ -35,7 +35,7 @@ export default function Profile({ navigation, logOut, user }) {
       setInternet(state.isConnected);
     });
   }
-  async function getHistory() {
+  async function getHistory(removingId) {
     let ref = db.collection("records").doc(user.email);
 
     let doc = await ref.get();
@@ -43,7 +43,7 @@ export default function Profile({ navigation, logOut, user }) {
       let array = [...Object.values(doc.data())].sort((a, b) => b[2] - a[2]);
       setHistory(array);
     }
-
+    if (removingId) setRemoving(removing.filter((item) => item != removingId));
     setLoading(false);
   }
 
@@ -102,8 +102,7 @@ export default function Profile({ navigation, logOut, user }) {
       [id]: FieldValue.delete(),
     });
 
-    setRemoving(removing.filter((item) => item != id));
-    getHistory();
+    getHistory(id);
   }
 
   return (

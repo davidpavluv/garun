@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   Text,
   TouchableOpacity,
@@ -17,14 +17,17 @@ import * as Permissions from "expo-permissions";
 import globalStyles from "../styles/global";
 import styles from "../styles/tracker";
 
+import { useKeepAwake } from "expo-keep-awake";
+
 const LOCATION_TRACKING = "locationtracking";
 
 export default function Tracker({ navigation, user, setNavigationVisible }) {
-  const [timerId, setTimerId] = useState(null);
+  useKeepAwake();
+  const [intervalId, setIntervalId] = useState(null);
   const [running, setRunning] = useState(0); //0=first render, -1=not running, 1, running
   const [distance, setDistance] = useState(0);
 
-  const [startTime, setStartTime] = useState(0);
+  const startTime = useRef(0);
   const [time, setTime] = useState(0);
 
   const [overLimit, setOverLimit] = useState(false);
@@ -35,9 +38,83 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
 
   const [modal, setModal] = useState(["", false]); //[[message],[visibility]]
 
-  async function getCoordinates() {
+  //check if already started
+  useEffect(() => {
+    startIfAlreadyStarted();
+  }, []);
+
+  useEffect(() => {
+    if (running === -1) {
+      handleStopTracking();
+    } else if (running === 1) {
+      handleStartTracking();
+    }
+  }, [running]);
+
+  //handles stopping
+  function handleStopTracking() {
+    clearInterval(intervalId);
+    stopLocationTracking();
+    setSaving(true);
+  }
+  //handles starting
+  async function handleStartTracking() {
+    let hasStarted = await Location.hasStartedLocationUpdatesAsync(
+      LOCATION_TRACKING
+    );
+
+    if (hasStarted) {
+      try {
+        let storedStartTime = await AsyncStorage.getItem("startTime");
+        startTime.current = storedStartTime ? JSON.parse(storedStartTime) : 0;
+      } catch (e) {
+        console.log(e);
+      }
+    } else {
+      try {
+        let theStartTime = Date.now();
+        startTime.current = theStartTime;
+        await AsyncStorage.setItem("startTime", JSON.stringify(theStartTime));
+        startLocationTracking();
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    startUpdates();
+  }
+
+  function startUpdates() {
+    let id = setInterval(() => {
+      setTime(Date.now() - startTime.current);
+      setSavedCoordinates();
+    }, 1000);
+    setIntervalId(id);
+  }
+
+  //clears interval on unmount
+  useEffect(() => {
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, []);
+
+  //start if already started
+  async function startIfAlreadyStarted() {
+    let hasStarted = await Location.hasStartedLocationUpdatesAsync(
+      LOCATION_TRACKING
+    );
+    if (hasStarted) {
+      setRunning(1);
+    }
+  }
+
+  //sets saved locations
+  async function setSavedCoordinates() {
     setCoordinates(await getSavedLocations());
   }
+
+  //returns saved locations
   async function getSavedLocations() {
     try {
       const item = await AsyncStorage.getItem("storedCoordinates");
@@ -47,31 +124,22 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
     }
   }
 
+  //hides navigation
   useEffect(() => {
-    let id;
     if ((running === 1) | saving) {
-      //hide
       setNavigationVisible(false);
-      //udate
-      id = setInterval(() => {
-        getCoordinates();
-      }, 1000);
     } else {
-      //show
       setNavigationVisible(true);
-      //stop update
-      clearInterval(id);
     }
-    return () => {
-      clearInterval(id);
-    };
   }, [running, saving]);
 
+  //checks if cheat
   useEffect(() => {
     let isOver = coordinates.some((coords) => coords[2] > 7);
     setOverLimit(isOver);
   }, [coordinates]);
 
+  //calculates distance
   useEffect(() => {
     let sum = 0;
     let shifted = coordinates.slice(3);
@@ -87,15 +155,7 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
     setDistance(sum);
   }, [coordinates]);
 
-  useEffect(() => {
-    if (running === -1) {
-      clearInterval(timerId); //stop timer
-      stopLocationTracking(); //stop tracker
-    } else if (running === 1) {
-      toggleToStart();
-    }
-  }, [running]);
-
+  //ask for permission 1 - or reset
   async function toggleToStart() {
     let stored = await Permissions.getAsync(Permissions.LOCATION);
 
@@ -116,6 +176,8 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
       toggleToStartAfterPrompt();
     }
   }
+
+  //ask for permission 2 - or reset
   async function toggleToStartAfterPrompt() {
     let { status } = await Permissions.askAsync(Permissions.LOCATION);
     if (status == "granted") {
@@ -131,25 +193,12 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
     }
   }
 
+  //set to running = 1
   function startRunning() {
-    //start timer
-    let id = setInterval(() => {
-      setTime(Date.now() - startTime);
-    }, 1000);
-    setTimerId(id);
-
-    //start tracker
-    startLocationTracking();
+    setRunning(1);
   }
 
-  useEffect(() => {
-    if (overLimit) {
-      toggle();
-      stopLocationTracking();
-      clearInterval(timerId);
-    }
-  }, [overLimit]);
-
+  //start background
   async function startLocationTracking() {
     await Location.startLocationUpdatesAsync(LOCATION_TRACKING, {
       accuracy: Location.Accuracy.BestForNavigation,
@@ -164,36 +213,37 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
       activityType: Location.ActivityType.Fitness,
       showsBackgroundLocationIndicator: true,
     });
-    const hasStarted = await Location.hasStartedLocationUpdatesAsync(
-      LOCATION_TRACKING
-    );
-    console.log("tracking started?", hasStarted);
   }
+
+  //stop background
   async function stopLocationTracking() {
     await Location.stopLocationUpdatesAsync(LOCATION_TRACKING);
   }
 
+  //resets all to default
   async function reset() {
-    stopLocationTracking();
-    clearInterval(timerId);
-
-    setRunning(-1);
-    setDistance(0);
-
-    setTimerId(null);
-    setStartTime(0);
-    setTime(0);
-
-    setSaving(false);
-    setCoordinates([]);
-    setOverLimit(false);
-
     try {
+      stopLocationTracking();
+      clearInterval(intervalId);
+
+      setRunning(-1);
+      setDistance(0);
+
+      setIntervalId(null);
+      startTime.current = 0;
+      setTime(0);
+
+      setSaving(false);
+      setCoordinates([]);
+      setOverLimit(false);
+
       await AsyncStorage.clear();
     } catch (e) {
       console.log(e);
     }
   }
+
+  //calculate distance
   function distanceFrom(points) {
     var radianLat1 = points[0][0] * (Math.PI / 180);
     var radianLng1 = points[0][1] * (Math.PI / 180);
@@ -211,16 +261,17 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
     var distance = earth_radius * 2 * Math.asin(Math.min(1, Math.sqrt(a)));
     return distance;
   }
+
+  //toggle running state
   function toggle() {
     if (running < 1) {
-      setSaving(false);
-      setStartTime(Date.now());
-      setRunning(1);
+      toggleToStart();
     } else {
-      setSaving(true);
       setRunning(-1);
     }
   }
+
+  //get display time
   function getTimeToDisplay(millisec) {
     var seconds = (millisec / 1000).toFixed(0);
     var minutes = Math.floor(seconds / 60);
@@ -240,6 +291,7 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
     return minutes + ":" + seconds;
   }
 
+  //handle save
   function save() {
     NetInfo.fetch().then(async (state) => {
       if (state.isConnected) {

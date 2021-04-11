@@ -17,12 +17,9 @@ import * as Permissions from "expo-permissions";
 import globalStyles from "../styles/global";
 import styles from "../styles/tracker";
 
-import { useKeepAwake } from "expo-keep-awake";
-
 const LOCATION_TRACKING = "locationtracking";
 
 export default function Tracker({ navigation, user, setNavigationVisible }) {
-  useKeepAwake();
   const [intervalId, setIntervalId] = useState(null);
   const [running, setRunning] = useState(0); //0=first render, -1=not running, 1, running
   const [distance, setDistance] = useState(0);

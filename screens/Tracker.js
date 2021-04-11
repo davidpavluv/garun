@@ -202,7 +202,7 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
   async function startLocationTracking() {
     await Location.startLocationUpdatesAsync(LOCATION_TRACKING, {
       accuracy: Location.Accuracy.BestForNavigation,
-      timeInterval: 60 * 1000,
+      timeInterval: 5000,
       // android behavior
       foregroundService: {
         notificationTitle: "GA RUN je aktivní",

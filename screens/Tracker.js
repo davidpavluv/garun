@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   Modal,
   Alert,
+  AppState,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { db, FieldValue } from "../services/firebase";
@@ -48,6 +49,30 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
     }
   }, [running]);
 
+  //pause interval on background
+  useEffect(() => {
+    AppState.addEventListener("change", pauser);
+    return () => {
+      AppState.removeEventListener("change", pauser);
+    };
+  }, []);
+
+  async function pauser() {
+    if (
+      this.state.appState.match(/inactive|background/) &&
+      nextAppState === "active"
+    ) {
+      let hasStarted = await Location.hasStartedLocationUpdatesAsync(
+        LOCATION_TRACKING
+      );
+      if (!running && hasStarted) {
+        startUpdates();
+      }
+    } else {
+      clearInterval(intervalId);
+    }
+  }
+
   //handles stopping
   function handleStopTracking() {
     clearInterval(intervalId);
@@ -85,6 +110,7 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
     let id = setInterval(() => {
       setTime(Date.now() - startTime.current);
       setSavedCoordinates();
+      console.log("x");
     }, 1000);
     setIntervalId(id);
   }
@@ -199,7 +225,6 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
   async function startLocationTracking() {
     await Location.startLocationUpdatesAsync(LOCATION_TRACKING, {
       accuracy: Location.Accuracy.BestForNavigation,
-      timeInterval: 5000,
       // android behavior
       foregroundService: {
         notificationTitle: "GA RUN je aktivní",

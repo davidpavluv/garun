@@ -7,7 +7,10 @@ import {
   Modal,
   Alert,
   AppState,
+  Platform,
 } from "react-native";
+import * as Application from "expo-application";
+
 import { Ionicons } from "@expo/vector-icons";
 import { db, FieldValue } from "../services/firebase";
 import NetInfo from "@react-native-community/netinfo";
@@ -17,6 +20,7 @@ import * as Location from "expo-location";
 import * as Permissions from "expo-permissions";
 import globalStyles from "../styles/global";
 import styles from "../styles/tracker";
+import * as IntentLauncher from "expo-intent-launcher";
 
 const LOCATION_TRACKING = "locationtracking";
 
@@ -110,7 +114,6 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
     let id = setInterval(() => {
       setTime(Date.now() - startTime.current);
       setSavedCoordinates();
-      console.log("x");
     }, 1000);
     setIntervalId(id);
   }
@@ -206,7 +209,7 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
     if (status == "granted") {
       Location.enableNetworkProviderAsync()
         .then(() => {
-          startRunning();
+          toggleToStartWithAlways();
         })
         .catch(() => {
           reset();
@@ -215,7 +218,31 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
       reset();
     }
   }
-
+  //ask for persisson 3 (always) - or reset
+  async function toggleToStartWithAlways() {
+    if (!(await isEnabledAlways()) && Platform.OS == "android") {
+      Alert.alert(
+        "Aplikace nemůže vaši polohu používat na pozadí",
+        "Přepněte v nastavení: opravnění polohy na 'povolit vždy'",
+        [
+          {
+            text: "Přejít do nastavení",
+            onPress: () =>
+              IntentLauncher.startActivityAsync(
+                IntentLauncher.ACTION_APPLICATION_DETAILS_SETTINGS,
+                { data: "package:" + Application.applicationId }
+              ),
+          },
+        ]
+      );
+      return;
+    }
+    startRunning();
+  }
+  async function isEnabledAlways() {
+    let info = await Permissions.getAsync(Permissions.LOCATION);
+    return info.permissions.location.scope == "always";
+  }
   //set to running = 1
   function startRunning() {
     setRunning(1);

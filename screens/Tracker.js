@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import * as Application from "expo-application";
 
+import * as Linking from "expo-linking";
 import { Ionicons } from "@expo/vector-icons";
 import { db, FieldValue } from "../services/firebase";
 import NetInfo from "@react-native-community/netinfo";
@@ -220,18 +221,23 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
   }
   //ask for persisson 3 (always) - or reset
   async function toggleToStartWithAlways() {
-    if (!(await isEnabledAlways()) && Platform.OS == "android") {
+    if (!(await isEnabledAlways())) {
       Alert.alert(
         "Aplikace nemůže vaši polohu používat na pozadí",
         "Přepněte v nastavení: opravnění polohy na 'povolit vždy'",
         [
           {
             text: "Přejít do nastavení",
-            onPress: () =>
-              IntentLauncher.startActivityAsync(
-                IntentLauncher.ACTION_APPLICATION_DETAILS_SETTINGS,
-                { data: "package:" + Application.applicationId }
-              ),
+            onPress: () => {
+              if (Platform.OS == "android") {
+                IntentLauncher.startActivityAsync(
+                  IntentLauncher.ACTION_APPLICATION_DETAILS_SETTINGS,
+                  { data: "package:" + Application.applicationId }
+                );
+              } else {
+                Linking.openURL("app-settings:");
+              }
+            },
           },
         ]
       );
@@ -393,7 +399,7 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
     >
       <View style={globalStyles.panel}>
         <Ionicons name="timer-outline" size={32} color="#4D6BFF" />
-        <Text style={globalStyles.panel_title}>Proběhni si</Text>
+        <Text style={globalStyles.panel_title}>Proběhni se</Text>
       </View>
 
       <View style={{ ...globalStyles.card, ...styles.card }}>

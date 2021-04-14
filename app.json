@@ -2,7 +2,7 @@
   "expo": {
     "name": "GA RUN",
     "slug": "GA-RUN",
-    "version": "3",
+    "version": "4",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "splash": {
@@ -17,7 +17,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.garunapp",
-      "buildNumber": "3",
+      "buildNumber": "4",
       "infoPlist": {
         "NSLocationAlwaysUsageDescription": "Aplikace používá polohu ke sledování běhu",
         "NSLocationWhenInUseUsageDescription": "Aplikace používá polohu ke sledování běhu",
@@ -27,7 +27,7 @@
     },
     "android": {
       "package": "com.garunapp",
-      "versionCode": 3,
+      "versionCode": 4,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#4D6BFF"

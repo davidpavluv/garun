@@ -258,6 +258,7 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
   async function startLocationTracking() {
     await Location.startLocationUpdatesAsync(LOCATION_TRACKING, {
       accuracy: Location.Accuracy.BestForNavigation,
+      timeInterval: 2000,
       // android behavior
       foregroundService: {
         notificationTitle: "GA RUN je aktivní",
@@ -399,7 +400,9 @@ export default function Tracker({ navigation, user, setNavigationVisible }) {
     >
       <View style={globalStyles.panel}>
         <Ionicons name="timer-outline" size={32} color="#4D6BFF" />
-        <Text style={globalStyles.panel_title}>Proběhni se</Text>
+        <Text style={globalStyles.panel_title}>
+          Proběhni se - {new Date().toLocaleDateString("cs")}
+        </Text>
       </View>
 
       <View style={{ ...globalStyles.card, ...styles.card }}>

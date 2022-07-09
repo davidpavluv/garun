@@ -21,7 +21,7 @@
     "expo-sqlite": "~8.5.0",
     "expo-status-bar": "~1.0.3",
     "expo-task-manager": "~8.6.0",
-    "firebase": "7.9.0",
+    "firebase": "7.24.0",
     "indexeddbshim": "^7.1.0",
     "react": "16.13.1",
     "react-dom": "16.13.1",
